@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::env;
+use std::io::{self, BufRead};
 
 #[derive(Serialize, Deserialize)]
 struct SummarizeRequest {
@@ -35,7 +36,20 @@ async fn summarize(message: String, api_token: Option<String>) -> String {
 #[tokio::main]
 async fn main() {
     let mut args: Vec<String> = env::args().collect();
-    args.remove(0);
-    let summary = summarize(args.join(" ").to_string(), None).await;
-    println!("{}", summary);
+
+    match args.len() {
+        1 => {
+            let stdin = io::stdin();
+            for line in stdin.lock().lines() {
+                let line = line.expect("Could not read line from standard in");
+                let summary = summarize(line, None).await;
+                println!("{}", summary);
+            }
+        }
+        _ => {
+            args.remove(0);
+            let summary = summarize(args.join(" ").to_string(), None).await;
+            println!("{}", summary);
+        }
+    }
 }
